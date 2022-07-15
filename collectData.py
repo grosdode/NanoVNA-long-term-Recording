@@ -21,7 +21,7 @@ def getport() -> str:
     raise OSError("device not found")
     
 # read data from Nano VNA
-def readData():
+def readData(ser):
     result = ''
     line = ''
     while True:
@@ -40,20 +40,21 @@ def readData():
     return result
 
 # trigger and read frequency vector from Nano VNA
-def getFrequencies():
+def getFrequencies(ser):
     ser.write(b'frequencies\r')
     ser.flush()
 
-    frequencies = readData()
-    x = []
-    for line in frequencies.split('\n')[1:]:
-        if line:
-            x.append(float(line))
-    frequencies = np.array(x)
+    frequencies = readData(ser)
+    # x = []
+    # for line in frequencies.split('\n')[1:]:
+    #     if line:
+    #         x.append(float(line))
+    # frequencies = np.array(x)
+    frequencies = np.array([float(line) for line in frequencies.split('\n')[1:] if line])
     return frequencies
 
 # trigger and read values array from Nano VNA
-def getData():
+def getData(ser):
     ser.write(b'data\r')
     ser.flush() 
 
@@ -68,50 +69,46 @@ def getData():
 
 # convert array with complex data to flat string
 def complexDataToString(complexArray):
-    result = ''
-    for x in complexArray:
-        result += str(x.real) + ';' + str(x.imag)+'i' + ';;'
-    result +='\n'
-    return result
+    # result = ''
+    # for x in complexArray:
+    #     result += str(x.real) + ';' + str(x.imag)+'i' + ';;'
+    # result +='\n'
+    # return result
+    return ';;'.join([f'{x.real};{x.imag}i' for x in complexArray]) + ';;\n'
 
 # convert vector with data to flat string
 def frequenciesToString(xss):
-    result = ''
-    for x in xss:
-        result += str(x) + ';;;'
-    result +='\n'
-    return result
+    # result = ''
+    # for x in xss:
+    #     result += str(x) + ';;;'
+    # result +='\n'
+    # return result
+    return ';;;'.join(xss) + ';;;\n'
 
 comport = getport()
-ser = serial.Serial(comport)   # connect to port
+with serial.Serial(comport) as ser:  # connect to port
+    frequencies = getFrequencies(ser) # read frequency vector
 
-frequencies = getFrequencies() # read frequency vector
+    # save frequency vector to file
+    timestr = time.strftime("%Y_%m_%d-%H_%M_%S")
+    filename = f'{FILE_NAME}_{timestr}.txt'
+    with open(filename, "w") as file:
+        content = ';' + frequenciesToString(frequencies)
+        file.write(content)
 
-# save frequency vector to file
-timestr = time.strftime("%Y_%m_%d-%H_%M_%S")
-filename = FILE_NAME + "_" + timestr + ".txt"
-file = open(filename, "w")
-content = ';' + frequenciesToString(frequencies)
-file.write(content)
-file.close()
-
-# collect data and save to file
-file = open(filename, "a")
-n = 0;
-starttime = time.time() # get start time to calc delay
-while True:
-    # print(time.time()) # debug output to check interval
-    data = getData()
-    Z = 50*(1 + data)/(1 - data) # calc impedance
-    content = time.strftime("%H:%M:%S") +';'+ complexDataToString(Z)
-    file.write(content)
-    n += 1
-    print(n)
-    if REPEAT != 0:
-        if n >= REPEAT:
-            break
-    # print(INTERVAL - ((time.time() - starttime) % INTERVAL))    # debug to check interval size
-    time.sleep(INTERVAL - ((time.time() - starttime) % INTERVAL)) # calc delay 
-        
-file.close()
-ser.close()
+        # collect data and save to file
+        n = 0;
+        starttime = time.time() # get start time to calc delay
+        while True:
+            # print(time.time()) # debug output to check interval
+            data = getData(ser)
+            Z = 50*(1 + data)/(1 - data) # calc impedance
+            content = time.strftime("%H:%M:%S") +';'+ complexDataToString(Z)
+            file.write(content)
+            n += 1
+            print(n)
+            if REPEAT != 0:
+                if n >= REPEAT:
+                    break
+            # print(INTERVAL - ((time.time() - starttime) % INTERVAL))    # debug to check interval size
+            time.sleep(INTERVAL - ((time.time() - starttime) % INTERVAL)) # calc delay 
