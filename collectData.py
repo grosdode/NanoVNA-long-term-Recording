@@ -82,7 +82,7 @@ with serial.Serial(comport) as ser:  # connect to port
         file.write(content)
 
         # collect data and save to file
-        n = 0;
+        n = 0
         starttime = time.time() # get start time to calc delay
         while True:
             # print(time.time()) # debug output to check interval
