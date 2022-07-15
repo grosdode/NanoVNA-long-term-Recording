@@ -58,7 +58,7 @@ def getData(ser):
     ser.write(b'data\r')
     ser.flush() 
 
-    data = readData()
+    data = readData(ser)
     x = []
     for line in data.split('\n')[1:]:
         if line:
@@ -77,13 +77,13 @@ def complexDataToString(complexArray):
     return ';;'.join([f'{x.real};{x.imag}i' for x in complexArray]) + ';;\n'
 
 # convert vector with data to flat string
-def frequenciesToString(xss):
+def frequenciesToString(frequencVector):
     # result = ''
     # for x in xss:
     #     result += str(x) + ';;;'
     # result +='\n'
     # return result
-    return ';;;'.join(xss) + ';;;\n'
+    return ';;;'.join([f'{x}' for x in frequencVector]) + ';;;\n'
 
 comport = getport()
 with serial.Serial(comport) as ser:  # connect to port
