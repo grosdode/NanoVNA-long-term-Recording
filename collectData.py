@@ -45,11 +45,6 @@ def getFrequencies(ser):
     ser.flush()
 
     frequencies = readData(ser)
-    # x = []
-    # for line in frequencies.split('\n')[1:]:
-    #     if line:
-    #         x.append(float(line))
-    # frequencies = np.array(x)
     frequencies = np.array([float(line) for line in frequencies.split('\n')[1:] if line])
     return frequencies
 
@@ -69,20 +64,10 @@ def getData(ser):
 
 # convert array with complex data to flat string
 def complexDataToString(complexArray):
-    # result = ''
-    # for x in complexArray:
-    #     result += str(x.real) + ';' + str(x.imag)+'i' + ';;'
-    # result +='\n'
-    # return result
     return ';;'.join([f'{x.real};{x.imag}i' for x in complexArray]) + ';;\n'
 
 # convert vector with data to flat string
 def frequenciesToString(frequencVector):
-    # result = ''
-    # for x in xss:
-    #     result += str(x) + ';;;'
-    # result +='\n'
-    # return result
     return ';;;'.join([f'{x}' for x in frequencVector]) + ';;;\n'
 
 comport = getport()
